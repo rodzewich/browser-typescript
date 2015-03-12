@@ -1,0 +1,22 @@
+<html>
+<head>
+    <script src="/home/rodzewich/Projects/browser-typescript/dest/browser-typescript.js"></script>
+    <script type="text/javascript">
+        compiler.configure({
+            version: "1.5",
+            encoding: "utf-8",
+            base: "/src/"
+        });
+        console.log("version", compiler.version());
+        console.log("encoding", compiler.encoding());
+        console.log("base", compiler.base());
+    </script>
+    <script src="/home/rodzewich/Projects/browser-typescript/test.ts" type="text/typescript"></script>
+    <script type="text/typescript">
+        script content
+    </script>
+</head>
+<body>
+
+</body>
+</html>
