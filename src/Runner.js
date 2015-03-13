@@ -1,5 +1,7 @@
 /*global window, compiler, ts */
 
+// todo: rename to *.ts file
+
 var config = new compiler.Config(),
     system = new compiler.System(),
     contentTypes = [
