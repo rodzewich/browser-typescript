@@ -1,12 +1,26 @@
-/// <reference path="../node_modules/grunt-tsc/bin/latest/typescript_internal.d.ts" />
+/// <reference path="./Config.ts" />
+
+declare var config: compiler.Config;
 
 module compiler {
 
-    export class System implements ts.System {
+    function xhr(path: string): string {
+        var request: XMLHttpRequest = new XMLHttpRequest();
+        request.open('GET', path, false);
+        request.send(null);
+        if (request.status === 200) {
+            return String(request.responseText || "");
+        }
+        return null;
+    }
+
+    export class System {
+
+        private buffer: string[] = [];
 
         private files: any = {};
 
-        private directories: any = {};
+        private directories: string[] = [];
 
         public args: string[] = [];
 
@@ -14,85 +28,114 @@ module compiler {
 
         public useCaseSensitiveFileNames: boolean = true;
 
-        public write(s: string): void {
-            console.log("write:", s);
+        public write(content: string): void {
+            if (config.getOutputType() === OutputType.BUFFER) {
+                this.buffer.push(content);
+            } else if (config.getOutputType() === OutputType.STDOUT) {
+                console.log('%s', content);
+            } else if (config.getOutputType() === OutputType.STDERR) {
+                console.log('%c %s', 'color: red', content);
+            }
         }
 
-        public readFile(fileName: string, encoding?: string): string {
-            console.log("readFile:", fileName);
-            var temp: string = this.resolvePath(fileName);
-            if (!temp) {
+        public getBuffer(): string[] {
+            var buffer: string[] = this.buffer;
+            this.buffer = [];
+            return buffer;
+        }
+
+        public readFile(filename: string, encoding?: string): string {
+            var temp: string = this.resolvePath(filename),
+                content: string;
+            if (typeof this.files[temp] === "string") {
+                return this.files[temp];
+            }
+            if (this.files[temp] === false) {
                 return undefined;
             }
-            if (typeof this.files[temp] !== "undefined") {
-                if (typeof this.files[temp] !== "string") {
-                    return this.files[temp];
-                }
+            content = xhr(temp);
+            if (content === null) {
+                this.files[temp] = false;
                 return undefined;
             }
-
-            return null;
+            this.files[temp] = content;
+            return content;
         }
 
-        public writeFile(fileName: string, data: string, writeByteOrderMark?: boolean): void {
-            console.log("writeFile:", fileName);
-            // todo: adjust it
+        public writeFile(filename: string, data: string): void {
+            this.files[String(filename || "")] = String(data || "");
         }
 
-        public watchFile (fileName: string, callback: (fileName: string) => void): ts.FileWatcher {
+        public watchFile (filename: string, callback: (fileName: string) => void): ts.FileWatcher {
             return null;
         }
 
         public resolvePath(path: string): string {
             console.log("resolvePath:", path);
             // todo: adjust it
-            return null;
+            return String(path || "");
         }
 
         public fileExists(path: string): boolean {
-            console.log("fileExists:", path);
-            // todo: adjust it
-            return null;
+            return this.readFile(path) !== undefined;
         }
 
         public directoryExists(path: string): boolean {
-            console.log("directoryExists:", path);
-            // todo: adjust it
-            return null;
+            return this.directories.indexOf(path) !== -1;
         }
 
-        public createDirectory(directoryName: string): void {
-            console.log("createDirectory:", directoryName);
-            // todo: adjust it
-            return null;
+        public createDirectory(path: string): void {
+            var temp: string = String(path || "");
+            if (!this.directoryExists(temp)) {
+                this.directories.push(temp);
+            }
         }
 
         public getExecutingFilePath(): string {
-            console.log("getExecutingFilePath:");
-            // todo: adjust it
-            return null;
+            return "tsc.js";
         }
 
         public getCurrentDirectory(): string {
-            console.log("getCurrentDirectory:");
+            var currentLocation: string = window.location.pathname.split("/").slice(0, -1).join("/"),
+                baseLocation: string = config.getBase();
             // todo: adjust it
-            return null;
+            return currentLocation;
         }
 
         public readDirectory(path: string, extension?: string): string[] {
-            console.log("getCurrentDirectory:");
-            // todo: adjust it
-            return null;
+            var result: string[] = [],
+                temp: string = this.resolvePath(String(path || "")),
+                index: number,
+                length = this.directories.length,
+                filename: string;
+            if (temp.slice(-1) !== "/") {
+                temp = temp + "/";
+            }
+            for (filename in this.files) {
+                if (!this.files.hasOwnProperty(filename)) {
+                    continue;
+                }
+                if (this.files[filename].indexOf(path) === 0) {
+                    if (typeof extension === "string" && extension) {
+                        if (filename.substr(filename.length - extension.length, extension.length) === extension) {
+                            result.push(filename);
+                        }
+                    } else {
+                        result.push(filename);
+                    }
+                }
+            }
+            for (index = 0; index < length; index++) {
+                if (this.directories[index].indexOf(temp) === 0) {
+                    result.push(this.directories[index]);
+                }
+            }
+            return result;
         }
 
-        public getMemoryUsage (): number {
-            return 0;
-        }
+        public getMemoryUsage (): number { return 0; }
 
-        public exit(exitCode?: number): void {
-            // todo: adjust it
-            return null;
-        }
+        public exit(code?: number): void {}
 
     }
 

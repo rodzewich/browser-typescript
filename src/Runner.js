@@ -1,4 +1,4 @@
-/*global window, compiler, ts */
+/*global window, compiler, compilers, ts */
 
 // todo: rename to *.ts file
 
@@ -32,7 +32,17 @@ function configure(options) {
  * @return {string}
  */
 function compileFile(path) {
-    console.log("compile file: ", path);
+    var tsc = compilers[config.getVersion()];
+    config.setOutputType(compiler.OutputType.STDERR);
+    tsc.executeCommandLine([
+        String(path || "").replace(/^https?:\/\/[^\/]+/, ""),
+        "--out", "output.js"
+    ]);
+    config.setOutputType(compiler.OutputType.STDOUT);
+    // todo check errors
+    if (system.fileExists("output.js")) {
+        eval(system.readFile("output.js"));
+    }
 }
 
 /**
@@ -40,7 +50,25 @@ function compileFile(path) {
  * @return {string}
  */
 function compileBody(body) {
-    console.log("compile body: ", body);
+    var tsc = compilers[config.getVersion()],
+        filename = Number(new Date()).toString(32),
+        buffer,
+        input = filename + ".ts",
+        output = filename + ".js";
+    system.writeFile(input, body);
+    config.setOutputType(compiler.OutputType.BUFFER);
+    tsc.executeCommandLine([
+        input,
+        "--out", output
+    ]);
+    config.setOutputType(compiler.OutputType.STDOUT);
+    buffer = system.getBuffer();
+    // todo check errors
+    if (system.fileExists(output) && buffer.length === 0) {
+        eval(system.readFile(output));
+    } else {
+        console.log("%c %s", "color: red", buffer.join("\n"));
+    }
 }
 
 /**
@@ -53,9 +81,9 @@ function apply() {
     for (index = 0; index < length; index += 1) {
         if (contentTypes.indexOf(elements[index].type) !== -1) {
             if (elements[index].src) {
-                eval(compileFile(elements[index].src));
+                compileFile(elements[index].src);
             } else {
-                eval(compileBody(elements[index].innerHTML));
+                compileBody(elements[index].innerHTML);
             }
         }
     }
@@ -66,5 +94,3 @@ if (window.addEventListener) {
 } else {
     window.attachEvent("onload", apply);
 }
-
-ts.sys = system;

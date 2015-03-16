@@ -194,10 +194,11 @@ module.exports = function (grunt) {
                         expand : false,
                         dest   : "temp/tsc.js",
                         src    : [
-                            "temp/*.js",
-                            "!temp/tsc.js",
-                            "node_modules/grunt-tsc/bin/v1.3/tsc.js",
-                            "src/Runner.js"
+                            "temp/Config.js",
+                            "temp/System.js",
+                            "src/Runner.js",
+                            "temp/bin/*.js",
+                            "!temp/bin/v1_0.js"
                         ]
                     }
                 ]
@@ -207,9 +208,9 @@ module.exports = function (grunt) {
         wrap: {
             options: {
                 wrapper: [
-                    "(function(){\"use strict\"",
-                    ";window.tsc={configure:configure,version:function(){return config.getVersion()}," +
-                    "base:function(){return config.getBase()},encoding:function(){return config.getEncoding()}};}())"
+                    "(function(){",
+                    ";this.tsc={configure:configure,version:function(){return config.getVersion()}," +
+                    "base:function(){return config.getBase()},encoding:function(){return config.getEncoding()}};}());"
                 ]
             },
             core: {
@@ -606,13 +607,22 @@ module.exports = function (grunt) {
                             if (content.indexOf("var TypeScript;") !== -1) {
                                 ns = "TypeScript";
                             }
-                            content = content.replace(/ts\.executeCommandLine\(([^\)]*)\);/g, function (content, arg) {
-                                if (arg.indexOf(".sys") !== -1) {
-                                    return "ts.sys = system;";
-                                }
-                                return "sys = system;";
-                            });
+                            if (/ts\.executeCommandLine\(([^\)]*)\);/.test(content)) {
+                                content = content.replace(/ts\.executeCommandLine\(([^\)]*)\);/g, function (content, arg) {
+                                    if (arg.indexOf(".sys") !== -1) {
+                                        return "ts.sys = system;";
+                                    }
+                                    return "sys = system;";
+                                });
+                            } else {
+                                content = [
+                                    content,
+                                    "TypeScript.Environment = system;"
+                                ].join("\n");
+                            }
                             content = [
+                                "var compilers;",
+                                "if(typeof compilers===\"undefined\"){compilers = {};}",
                                 "compilers[" + JSON.stringify(version) + "]=(function(){",
                                 content,
                                 "return " + ns + ";",
@@ -674,6 +684,8 @@ module.exports = function (grunt) {
             }
         ]);
     });
+
+    grunt.registerTask("compile", "Compile project", ["tsc:core", "concat", "wrap"]);
 
     grunt.registerTask("default", "Build project.", ["tsc:core", "concat", "wrap", "uglify:core"]);
 

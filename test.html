@@ -1,19 +1,32 @@
 <html>
 <head>
-    <script src="/home/rodzewich/Projects/browser-typescript/dest/tsc.js"></script>
+    <script src="dest/tsc.js"></script>
     <script type="text/javascript">
         tsc.configure({
             version: "1.5",
             encoding: "utf-8",
             base: "/src/"
         });
-        console.log("version", compiler.version());
-        console.log("encoding", compiler.encoding());
-        console.log("base", compiler.base());
+        console.log("version", tsc.version());
+        console.log("encoding", tsc.encoding());
+        console.log("base", tsc.base());
     </script>
-    <script src="/home/rodzewich/Projects/browser-typescript/test.ts" type="text/typescript"></script>
+    <!--<script src="test.ts" type="text/typescript"></script>-->
     <script type="text/typescript">
-        script content
+        /// <reference path="UserTramPamPam.ts" />
+        interface IMyClass {
+            addonMethod();
+        }
+        class MyClass implements IMyClass {
+            constructor() {
+                alert("I am typescript!");
+            }
+            addonMethod() {
+                console.log(123);
+            }
+        }
+        var element: IMyClass = new MyClass();
+        //element = 123;
     </script>
 </head>
 <body>
