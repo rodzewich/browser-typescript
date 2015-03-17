@@ -16,6 +16,16 @@ module compiler {
 
         private base: string = "";
 
+        private debug: boolean = false;
+
+        public getDebug(): boolean {
+            return !!this.debug;
+        }
+
+        public isDebug(): boolean {
+            return this.getDebug();
+        }
+
         public getOutputType(): OutputType {
             return this.outputType;
         }
@@ -30,6 +40,10 @@ module compiler {
 
         public getBase(): string {
             return this.base;
+        }
+
+        public setDebug(value: boolean): void {
+            this.debug = !!value;
         }
 
         public setOutputType(value: OutputType): void {

@@ -1,19 +1,19 @@
 <html>
 <head>
-    <script src="dest/tsc.js"></script>
+    <script src="dest/tsc.min.js"></script>
     <script type="text/javascript">
         tsc.configure({
             version: "1.5",
             encoding: "utf-8",
-            base: "/src/"
+            base: "/src/",
+            debug: true
         });
         console.log("version", tsc.version());
         console.log("encoding", tsc.encoding());
         console.log("base", tsc.base());
     </script>
-    <!--<script src="test.ts" type="text/typescript"></script>-->
+    <script src="test.ts" type="text/typescript"></script>
     <script type="text/typescript">
-        /// <reference path="UserTramPamPam.ts" />
         interface IMyClass {
             addonMethod();
         }
@@ -27,6 +27,13 @@
         }
         var element: IMyClass = new MyClass();
         //element = 123;
+    </script>
+    <script type="text/javascript">
+        setTimeout(function () {
+            var app = new Application();
+            app.getStorage();
+            console.log("app", app);
+        }, 0);
     </script>
 </head>
 <body>

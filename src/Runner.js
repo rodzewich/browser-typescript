@@ -2,7 +2,9 @@
 
 // todo: rename to *.ts file
 
-var config = new compiler.Config(),
+var configured = false,
+    allowConfigure = true,
+    config = new compiler.Config(),
     system = new compiler.System(),
     contentTypes = [
         "text/typescript"
@@ -13,9 +15,16 @@ var config = new compiler.Config(),
  * @param {string} options.encoding
  * @param {string} options.version
  * @param {string} options.base
+ * @param {string} options.debug
  * @return {void}
  */
 function configure(options) {
+    if (configured) {
+        throw new Error("Environment already configured");
+    }
+    if (!allowConfigure) {
+        throw new Error("Runtime configuration not supported");
+    }
     if (options && options.encoding !== undefined) {
         config.setEncoding(options.encoding);
     }
@@ -25,6 +34,10 @@ function configure(options) {
     if (options && options.base !== undefined) {
         config.setBase(options.base);
     }
+    if (options && options.debug !== undefined) {
+        config.setDebug(options.debug);
+    }
+    configured = true;
 }
 
 /**
@@ -33,6 +46,11 @@ function configure(options) {
  */
 function compileFile(path) {
     var tsc = compilers[config.getVersion()];
+    var time;
+    if (config.isDebug()) {
+        time = Number(new Date());
+    }
+    allowConfigure = false;
     config.setOutputType(compiler.OutputType.STDERR);
     tsc.executeCommandLine([
         String(path || "").replace(/^https?:\/\/[^\/]+/, ""),
@@ -41,7 +59,10 @@ function compileFile(path) {
     config.setOutputType(compiler.OutputType.STDOUT);
     // todo check errors
     if (system.fileExists("output.js")) {
-        eval(system.readFile("output.js"));
+        eval.call(null, system.readFile("output.js"));
+    }
+    if (config.isDebug()) {
+        console.log("%c%s", "color: blue", "time: " + String(Number(new Date()) - time));
     }
 }
 
@@ -50,6 +71,7 @@ function compileFile(path) {
  * @return {string}
  */
 function compileBody(body) {
+    allowConfigure = false;
     var tsc = compilers[config.getVersion()],
         filename = Number(new Date()).toString(32),
         buffer,
@@ -65,7 +87,7 @@ function compileBody(body) {
     buffer = system.getBuffer();
     // todo check errors
     if (system.fileExists(output) && buffer.length === 0) {
-        eval(system.readFile(output));
+        eval.call(null, system.readFile(output));
     } else {
         console.log("%c %s", "color: red", buffer.join("\n"));
     }

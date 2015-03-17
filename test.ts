@@ -6,4 +6,14 @@ class TestClass {
 
 }
 
-var test = new TestClass("1", "2", "3", "string");
+class Application {
+
+    constructor() {
+
+    }
+
+    public getStorage(): any {
+        return null;
+    }
+
+}

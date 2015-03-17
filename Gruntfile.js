@@ -159,6 +159,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-wrap");
     grunt.loadNpmTasks("grunt-contrib-uglify");
     grunt.loadNpmTasks("grunt-contrib-concat");
+    grunt.loadNpmTasks('grunt-closure-compiler');
 
     grunt.initConfig({
 
@@ -209,7 +210,7 @@ module.exports = function (grunt) {
             options: {
                 wrapper: [
                     "(function(){",
-                    ";this.tsc={configure:configure,version:function(){return config.getVersion()}," +
+                    ";window.tsc={configure:configure,version:function(){return config.getVersion()}," +
                     "base:function(){return config.getBase()},encoding:function(){return config.getEncoding()}};}());"
                 ]
             },
@@ -231,6 +232,19 @@ module.exports = function (grunt) {
                         src    : "dest/tsc.js"
                     }
                 ]
+            }
+        },
+
+        'closure-compiler': {
+            frontend: {
+                closurePath: '.',
+                js: 'dest/tsc.js',
+                jsOutputFile: 'dest/tsc.min.js',
+                maxBuffer: 5000,
+                options: {
+                    compilation_level: 'SIMPLE_OPTIMIZATIONS',
+                    //language_in: 'ECMASCRIPT5_STRICT'
+                }
             }
         }
 
@@ -687,6 +701,6 @@ module.exports = function (grunt) {
 
     grunt.registerTask("compile", "Compile project", ["tsc:core", "concat", "wrap"]);
 
-    grunt.registerTask("default", "Build project.", ["tsc:core", "concat", "wrap", "uglify:core"]);
+    grunt.registerTask("default", "Build project.", ["tsc:core", "concat", "wrap", "uglify:core", "closure-compiler"]);
 
 };

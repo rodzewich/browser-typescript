@@ -4,6 +4,10 @@ declare var config: compiler.Config;
 
 module compiler {
 
+    var files: any = [];
+
+    var directories: string[] = [];
+
     function xhr(path: string): string {
         var request: XMLHttpRequest = new XMLHttpRequest();
         request.open('GET', path, false);
@@ -17,10 +21,6 @@ module compiler {
     export class System {
 
         private buffer: string[] = [];
-
-        private files: any = {};
-
-        private directories: string[] = [];
 
         public args: string[] = [];
 
@@ -47,23 +47,23 @@ module compiler {
         public readFile(filename: string, encoding?: string): string {
             var temp: string = this.resolvePath(filename),
                 content: string;
-            if (typeof this.files[temp] === "string") {
-                return this.files[temp];
+            if (typeof files[temp] === "string") {
+                return files[temp];
             }
-            if (this.files[temp] === false) {
+            if (files[temp] === false) {
                 return undefined;
             }
             content = xhr(temp);
             if (content === null) {
-                this.files[temp] = false;
+                files[temp] = false;
                 return undefined;
             }
-            this.files[temp] = content;
+            files[temp] = content;
             return content;
         }
 
         public writeFile(filename: string, data: string): void {
-            this.files[String(filename || "")] = String(data || "");
+            files[String(filename || "")] = String(data || "");
         }
 
         public watchFile (filename: string, callback: (fileName: string) => void): ts.FileWatcher {
@@ -81,13 +81,13 @@ module compiler {
         }
 
         public directoryExists(path: string): boolean {
-            return this.directories.indexOf(path) !== -1;
+            return directories.indexOf(path) !== -1;
         }
 
         public createDirectory(path: string): void {
             var temp: string = String(path || "");
             if (!this.directoryExists(temp)) {
-                this.directories.push(temp);
+                directories.push(temp);
             }
         }
 
@@ -106,16 +106,16 @@ module compiler {
             var result: string[] = [],
                 temp: string = this.resolvePath(String(path || "")),
                 index: number,
-                length = this.directories.length,
+                length = directories.length,
                 filename: string;
             if (temp.slice(-1) !== "/") {
                 temp = temp + "/";
             }
-            for (filename in this.files) {
-                if (!this.files.hasOwnProperty(filename)) {
+            for (filename in files) {
+                if (!files.hasOwnProperty(filename)) {
                     continue;
                 }
-                if (this.files[filename].indexOf(path) === 0) {
+                if (files[filename].indexOf(path) === 0) {
                     if (typeof extension === "string" && extension) {
                         if (filename.substr(filename.length - extension.length, extension.length) === extension) {
                             result.push(filename);
@@ -126,8 +126,8 @@ module compiler {
                 }
             }
             for (index = 0; index < length; index++) {
-                if (this.directories[index].indexOf(temp) === 0) {
-                    result.push(this.directories[index]);
+                if (directories[index].indexOf(temp) === 0) {
+                    result.push(directories[index]);
                 }
             }
             return result;
