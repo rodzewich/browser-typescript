@@ -1,0 +1,1 @@
+var deps3: number = 3;

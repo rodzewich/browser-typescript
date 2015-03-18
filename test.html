@@ -15,13 +15,13 @@
     <script src="test.ts" type="text/typescript"></script>
     <script type="text/typescript">
         interface IMyClass {
-            addonMethod();
+            addonMethod(): void;
         }
         class MyClass implements IMyClass {
             constructor() {
                 alert("I am typescript!");
             }
-            addonMethod() {
+            addonMethod(): void {
                 console.log(123);
             }
         }

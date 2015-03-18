@@ -18,7 +18,24 @@ module compiler {
         return null;
     }
 
-    export class System {
+    export interface ISystem {
+        write(content: string);
+        getBuffer(): string[];
+        readFile(filename: string, encoding?: string): string;
+        writeFile(filename: string, data: string): void;
+        watchFile(): void;
+        resolvePath(path: string): string;
+        fileExists(path: string): boolean;
+        directoryExists(path: string): boolean;
+        createDirectory(path: string): void;
+        getExecutingFilePath(): string;
+        getCurrentDirectory(): string;
+        readDirectory(path: string, extension?: string): string[];
+        getMemoryUsage (): number;
+        exit(code?: number): void;
+    }
+
+    export class System implements ISystem {
 
         private buffer: string[] = [];
 
@@ -66,9 +83,7 @@ module compiler {
             files[String(filename || "")] = String(data || "");
         }
 
-        public watchFile (filename: string, callback: (fileName: string) => void): ts.FileWatcher {
-            return null;
-        }
+        public watchFile (): void {}
 
         public resolvePath(path: string): string {
             console.log("resolvePath:", path);

@@ -18,6 +18,20 @@ module compiler {
 
         private debug: boolean = false;
 
+        private implicitAny: boolean = true;
+
+        public getImplicitAny(): boolean {
+            return !!this.implicitAny;
+        }
+
+        public isImplicitAny(): boolean {
+            return this.getImplicitAny();
+        }
+
+        public setImplicitAny(value: boolean): void {
+            this.implicitAny = !!value;
+        }
+
         public getDebug(): boolean {
             return !!this.debug;
         }
