@@ -36,7 +36,6 @@ also do compile runtime in browser.
     </script>
 </head>
 <body>
-
 </body>
 </html>
 ```
