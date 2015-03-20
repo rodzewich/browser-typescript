@@ -31,6 +31,7 @@ also do compile runtime in browser.
     <!-- runtime used, enable source mapping in future -->
     <script type="text/typescript">
         /// <reference path="IApplication.ts" />
+        /// <reference path="Application.ts" />
         var app: IApplication = new Application(); // <-- use class from prev downloads
         app.start();
     </script>
