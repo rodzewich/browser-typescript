@@ -15,44 +15,24 @@ also do compile runtime in browser.
 ```html
 <html>
 <head>
+    <!-- include library -->
     <script src="dest/tsc.min.js"></script>
+    <!-- set compiler settings -->
     <script type="text/javascript">
         tsc.configure({
-            version: "1.5",
-            encoding: "utf-8",
-            base: "/src/",
-            debug: true
+            version: "1.5",    // allow: "1.1", "1.3", "1.4", "1.5", "default"(1.3), "latest"(1.5)
+            encoding: "utf-8", // source file encoding, not used
+            base: "/src/",     // source file based, not used
+            debug: true        // enable debug mode
         });
-        console.log("version", tsc.version());
-        console.log("encoding", tsc.encoding());
-        console.log("base", tsc.base());
     </script>
-    <script src="test.ts" type="text/typescript"></script>
-    <script src="test/src/temp/MyScript.ts" type="text/typescript"></script>
+    <!-- include TypeScript file, enable source mapping -->
+    <script src="example/app.ts" type="text/typescript"></script>
+    <!-- runtime used, enable source mapping in future -->
     <script type="text/typescript">
-        module ns {
-            export class User {
-                private id: number;
-                public getId(): number {
-                    return this.id || 0;
-                }
-                public setId(id: number): void {
-                    this.id = id;
-                }
-                constructor(id: number) {
-                    this.setId(id);
-                }
-            }
-        }
-        var element: HTMLDivElement = document.createElement("div"),
-            user = new ns.User(123);
-    </script>
-    <script type="text/javascript">
-        setTimeout(function () {
-            var app = new Application();
-            app.getStorage();
-            console.log("app", app);
-        }, 0);
+        /// <reference path="IApplication.ts" />
+        var app: IApplication = new Application(); // <-- use class from prev downloads
+        app.start();
     </script>
 </head>
 <body>
