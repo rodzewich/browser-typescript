@@ -13,20 +13,24 @@
         console.log("base", tsc.base());
     </script>
     <script src="test.ts" type="text/typescript"></script>
+    <script src="test/src/temp/MyScript.ts" type="text/typescript"></script>
     <script type="text/typescript">
-        interface IMyClass {
-            addonMethod(): void;
-        }
-        class MyClass implements IMyClass {
-            constructor() {
-                alert("I am typescript!");
+        module ns {
+            export class User {
+                private id: number;
+                public getId(): number {
+                    return this.id || 0;
+                }
+                public setId(id: number): void {
+                    this.id = id;
+                }
+                constructor(id: number) {
+                    this.setId(id);
+                }
             }
-            addonMethod(): void {
-                console.log(123);
-            }
         }
-        var element: IMyClass = new MyClass();
-        //element = 123;
+        var element: HTMLDivElement = document.createElement("div"),
+            user = new ns.User(123);
     </script>
     <script type="text/javascript">
         setTimeout(function () {

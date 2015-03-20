@@ -52,7 +52,7 @@ function configure(options) {
  * @return {string}
  */
 function compileFile(path) {
-    var tsc = compilers[config.getVersion()];
+    var tsc = compilers[config.getVersion()]();
     var time;
     if (config.isDebug()) {
         time = Number(new Date());
@@ -92,7 +92,7 @@ function compileFile(path) {
  */
 function compileBody(body) {
     allowConfigure = false;
-    var tsc = compilers[config.getVersion()],
+    var tsc = compilers[config.getVersion()](),
         filename = Number(new Date()).toString(32),
         source = "temp-" + filename + ".ts",
         target = "temp-" + filename + ".js",

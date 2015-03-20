@@ -240,7 +240,7 @@ module.exports = function (grunt) {
                 closurePath: '.',
                 js: 'dest/tsc.js',
                 jsOutputFile: 'dest/tsc.min.js',
-                maxBuffer: 5000,
+                maxBuffer: 50000,
                 options: {
                     compilation_level: 'SIMPLE_OPTIMIZATIONS',
                     //language_in: 'ECMASCRIPT5_STRICT'
@@ -547,6 +547,33 @@ module.exports = function (grunt) {
                             }
                         });
                     });
+                    actions.push(function (next) {
+                        var contentWithLib = [];
+                        fs.readFile(target, function (err1, targetContent) {
+                            if (err1) {
+                                displayError(err1);
+                                done(false);
+                            } else {
+                                contentWithLib.push(targetContent.toString("utf8"));
+                                fs.readFile(path.join(PATH_COMPILER, "bin/lib.d.ts"), function (err2, libContent) {
+                                    if (err2) {
+                                        displayError(err2);
+                                        done(false);
+                                    } else {
+                                        contentWithLib.push("system.writeFile(\"lib.d.ts\", " + JSON.stringify(libContent.toString("utf8").split("\r\n")) + ".join(\"\\n\"));");
+                                        fs.writeFile(target, contentWithLib.join("\n"), function (err3) {
+                                            if (err3) {
+                                                displayError(err3);
+                                                done(false);
+                                            } else {
+                                                next();
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    });
                 });
                 actions.push(function () {
                     next();
@@ -637,10 +664,10 @@ module.exports = function (grunt) {
                             content = [
                                 "var compilers;",
                                 "if(typeof compilers===\"undefined\"){compilers = {};}",
-                                "compilers[" + JSON.stringify(version) + "]=(function(){",
+                                "compilers[" + JSON.stringify(version) + "]=function(){",
                                 content,
                                 "return " + ns + ";",
-                                "}());"
+                                "};"
                             ].join("\n");
                             fs.writeFile("temp/bin/" + filename, content, function (error) {
                                 if (error) {
