@@ -661,10 +661,10 @@ module.exports = function (grunt) {
         ]);
     });
 
-    grunt.registerTask("compile", ["tsc:all", "uglify:all", "build", "uglify:result", "closure-compiler:result"]);
+    grunt.registerTask("compile", ["tsc:all", "uglify:all", "build", "compress"]);
 
-    grunt.registerTask("default", ["download", "compile", "compress"]);
+    grunt.registerTask("default", ["download", "compile"]);
 
-    grunt.registerTask("compress", []);
+    grunt.registerTask("compress", ["uglify:result", "closure-compiler:result"]);
 
 };
