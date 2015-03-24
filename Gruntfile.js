@@ -153,155 +153,94 @@ module.exports = function (grunt) {
             }
         });
     }
-    
 
     grunt.loadNpmTasks("grunt-tsc");
-    grunt.loadNpmTasks("grunt-wrap");
     grunt.loadNpmTasks("grunt-contrib-uglify");
-    grunt.loadNpmTasks("grunt-contrib-concat");
     grunt.loadNpmTasks('grunt-closure-compiler');
 
-    grunt.initConfig({
+    var ENVIRONMENT = "/usr/bin/env",
+        TEMP        = path.join(cwd,  "temp"),
+        TARGET      = path.join(TEMP, "target"),
+        DOWNLOAD    = path.join(TEMP, "download"),
+        COMPILER    = path.join(TEMP, "compiler"),
+        VERSIONS    = path.join(TEMP, "versions.json"),
+        RESULT      = path.join(TEMP, "result.js"),
+        REPOSITORY  = "https://github.com/Microsoft/TypeScript.git";
 
+    grunt.initConfig({
         pkg: grunt.file.readJSON("package.json"),
         tsc: {
             options: {
                 version: "latest"
             },
-            core: {
+            all: {
                 options: {},
                 files: [
                     {
-                        ext: ".js",
-                        expand: true,
-                        dest: "temp",
+                        expand: false,
+                        dest: "temp/typescript.js",
                         cwd: "src",
-                        src: [
-                            "*.ts",
-                            "**/*.ts"
-                        ]
+                        src: [ "*.ts", "**/*.ts" ]
                     }
                 ]
             }
         },
-
-        concat: {
-            options: {
-                //banner: grunt.file.read("src/banner.txt")
-            },
-            compile: {
-                files: [
-                    {
-                        expand : false,
-                        dest   : "temp/tsc.js",
-                        src    : [
-                            "temp/Config.js",
-                            "temp/System.js",
-                            "src/Runner.js",
-                            "temp/bin/*.js",
-                            "!temp/bin/v1_0.js"
-                        ]
-                    }
-                ]
-            }
-        },
-
-        wrap: {
-            options: {
-                wrapper: [
-                    "(function(){",
-                    ";window.tsc={configure:configure,version:function(){return config.getVersion()}," +
-                    "base:function(){return config.getBase()},encoding:function(){return config.getEncoding()}};}());"
-                ]
-            },
-            core: {
-                src: "temp/tsc.js",
-                dest: "dest/tsc.js"
-            }
-        },
-
-        // todo: change to google closure compiler
         uglify: {
             options: {
             },
-            core: {
+            all: {
                 files: [
                     {
                         expand : false,
-                        dest   : "dest/tsc.js",
-                        src    : "dest/tsc.js"
+                        dest   : "temp/temp.js",
+                        src    : [
+                            "temp/typescript.js",
+                            "src/Runner.js"
+                        ]
+                    }
+                ]
+            },
+            result: {
+                files: [
+                    {
+                        expand : false,
+                        dest   : "temp/result.js",
+                        src    : "temp/result.js"
                     }
                 ]
             }
         },
-
         'closure-compiler': {
-            frontend: {
+            result: {
                 closurePath: '.',
-                js: 'dest/tsc.js',
+                js: 'temp/result.js',
                 jsOutputFile: 'dest/tsc.min.js',
                 maxBuffer: 50000,
                 options: {
                     compilation_level: 'SIMPLE_OPTIMIZATIONS',
-                    //language_in: 'ECMASCRIPT5_STRICT'
+                    language_in: 'ECMASCRIPT5_STRICT'
                 }
             }
         }
-
     });
 
-    grunt.registerTask("download", "Download libraries.", function () {
-        var done            = this.async(),
-            project         = "https://github.com/Microsoft/TypeScript.git",
-            versions        = {},
-            tempExists      = false,
-            tempIsFile      = false,
-            tempIsDirectory = false,
-            binExists       = false,
-            binIsFile       = false,
-            binIsDirectory  = false,
-            additionalVersion;
-
-        var PATH_COMPILER = "temp/compiler";
-        var PATH_BINARY = "temp/bin";
-
+    grunt.registerTask("download", function () {
+        var done = this.async(),
+            versions = {},
+            directoryExists = false,
+            additionalVersion = false;
         deferred([
             function (next) {
-                fs.exists(PATH_COMPILER, function (exists) {
-                    binExists = exists;
+                fs.exists(DOWNLOAD, function (exists) {
+                    directoryExists = !!exists;
                     next();
                 });
             },
             function (next) {
-                if (binExists) {
-                    fs.stat(PATH_COMPILER, function (error, stats) {
-                        if (error) {
-                            displayError(error);
-                            done(false);
-                        } else {
-                            binIsDirectory = stats.isDirectory();
-                            binIsFile = !stats.isDirectory();
-                            next();
-                        }
-                    });
-                } else {
-                    next();
-                }
-            },
-            function (next) {
                 var remove,
                     errors = [];
-                if (binIsFile) {
-                    fs.unlink(PATH_COMPILER, function (error) {
-                        if (error) {
-                            displayError(error);
-                            done(false);
-                        } else {
-                            next();
-                        }
-                    });
-                } else if (binIsDirectory) {
-                    remove = spawn("rm", ["-rf", PATH_COMPILER]);
+                if (directoryExists) {
+                    remove = spawn("rm", ["-rf", DOWNLOAD]);
                     remove.stdout.on("data", function (data) {
                         errors.push(data.toString("utf8"));
                     });
@@ -313,6 +252,7 @@ module.exports = function (grunt) {
                             displayContent(errors.join(""));
                             done(true);
                         } else {
+                            displayProperty("remove", DOWNLOAD);
                             next();
                         }
                     });
@@ -321,52 +261,27 @@ module.exports = function (grunt) {
                 }
             },
             function (next) {
-                mkdir(PATH_COMPILER, function (error) {
+                mkdir(DOWNLOAD, function (error) {
                     if (error) {
                         displayError(error);
                         done(false);
                     } else {
-                        displayProperty("create", path.join(cwd, PATH_COMPILER));
+                        displayProperty("mkdir", DOWNLOAD);
                         next();
                     }
                 });
             },
             function (next) {
-                fs.exists(PATH_BINARY, function (exists) {
-                    tempExists = exists;
+                fs.exists(COMPILER, function (exists) {
+                    directoryExists = !!exists;
                     next();
                 });
             },
             function (next) {
-                if (tempExists) {
-                    fs.stat(PATH_BINARY, function (error, stats) {
-                        if (error) {
-                            displayError(error);
-                            done(false);
-                        } else {
-                            tempIsDirectory = stats.isDirectory();
-                            tempIsFile = !stats.isDirectory();
-                            next();
-                        }
-                    });
-                } else {
-                    next();
-                }
-            },
-            function (next) {
                 var remove,
                     errors = [];
-                if (tempIsFile) {
-                    fs.unlink(PATH_BINARY, function (error) {
-                        if (error) {
-                            displayError(error);
-                            done(false);
-                        } else {
-                            next();
-                        }
-                    });
-                } else if (tempIsDirectory) {
-                    remove = spawn("rm", ["-rf", PATH_BINARY]);
+                if (directoryExists) {
+                    remove = spawn("rm", ["-rf", COMPILER]);
                     remove.stdout.on("data", function (data) {
                         errors.push(data.toString("utf8"));
                     });
@@ -376,8 +291,9 @@ module.exports = function (grunt) {
                     remove.on("close", function (code) {
                         if (code !== 0) {
                             displayContent(errors.join(""));
-                            done(false);
+                            done(true);
                         } else {
+                            displayProperty("remove", COMPILER);
                             next();
                         }
                     });
@@ -386,19 +302,19 @@ module.exports = function (grunt) {
                 }
             },
             function (next) {
-                mkdir(PATH_BINARY, function (error) {
+                mkdir(COMPILER, function (error) {
                     if (error) {
                         displayError(error);
                         done(false);
                     } else {
-                        displayProperty("create", path.join(cwd, PATH_BINARY));
+                        displayProperty("mkdir", COMPILER);
                         next();
                     }
                 });
             },
             function (next) {
                 var errors = [],
-                    process = spawn("/usr/bin/env", ["git", "clone", project, PATH_COMPILER]);
+                    process = spawn(ENVIRONMENT, ["git", "clone", REPOSITORY, COMPILER]);
                 process.stdout.on("data", function (data) {
                     errors.push(data.toString("utf8"));
                 });
@@ -410,14 +326,14 @@ module.exports = function (grunt) {
                         displayContent(errors.join(""));
                         done(false);
                     } else {
-                        displayProperty("checkout", project);
+                        displayProperty("checkout", REPOSITORY);
                         next();
                     }
                 });
             },
             function (next) {
                 var errors  = [],
-                    process = spawn("/usr/bin/env", ["git", "checkout", "master"], {cwd: PATH_COMPILER});
+                    process = spawn(ENVIRONMENT, ["git", "checkout", "master"], {cwd: COMPILER});
                 process.stdout.on("data", function (data) {
                     errors.push(data.toString("utf8"));
                 });
@@ -429,12 +345,13 @@ module.exports = function (grunt) {
                         displayContent(errors.join(""));
                         done(false);
                     } else {
+                        displayProperty("switch", "master");
                         next();
                     }
                 });
             },
             function (next) {
-                var process = spawn("/usr/bin/env", ["git", "pull"], {cwd: PATH_COMPILER}),
+                var process = spawn(ENVIRONMENT, ["git", "pull"], {cwd: COMPILER}),
                     errors  = [];
                 process.stdout.on("data", function (data) {
                     errors.push(data.toString("utf8"));
@@ -447,17 +364,14 @@ module.exports = function (grunt) {
                         displayContent(errors.join(""));
                         done(false);
                     } else {
+                        displayProperty("update", "head");
                         next();
                     }
                 });
             },
-
-
-
-
             function (next) {
                 var content = "",
-                    process = spawn("/usr/bin/env", ["git", "branch", "-a", "--no-color"], {cwd: PATH_COMPILER}),
+                    process = spawn(ENVIRONMENT, ["git", "branch", "-a", "--no-color"], {cwd: COMPILER}),
                     errors  = [];
                 process.stdout.on("data", function (data) {
                     content += data.toString("utf8");
@@ -479,10 +393,13 @@ module.exports = function (grunt) {
                         });
                         temp.sort();
                         temp.forEach(function (version) {
-                            versions[version.replace(/^(\d+\.\d+)(?:\.\d+)?$/, "$1")] = version;
+                            if (Number(version) >= 1.1) {
+                                versions[version.replace(/^(\d+\.\d+)(?:\.\d+)?$/, "$1")] = version;
+                            }
                         });
                         versions.latest = "master";
                         versions.default = temp[temp.length - 2];
+                        displayProperty("branches", REPOSITORY);
                         next();
                     }
                 });
@@ -491,17 +408,17 @@ module.exports = function (grunt) {
                 var actions = [];
                 Object.keys(versions).forEach(function (version) {
                     var branch = versions[version],
-                        target = path.join(PATH_BINARY, "v" + version.replace(/\./g, "_") + ".js");
+                        target = path.join(DOWNLOAD, "v" + version);
                     if (branch !== "master") {
                         branch = "release-" + branch;
                     }
-                    if (["default", "latest"].indexOf(version) !== -1) {
-                        target = path.join(PATH_BINARY, version + ".js");
+                    if (["latest", "default"].indexOf(version) !== -1) {
+                        target = path.join(DOWNLOAD, version);
                     }
                     actions.push(function (next) {
                         var errors = [],
                             process;
-                        process = spawn("/usr/bin/env", ["git", "checkout", branch], {cwd: PATH_COMPILER});
+                        process = spawn(ENVIRONMENT, ["git", "checkout", branch], {cwd: COMPILER});
                         process.stdout.on("data", function (data) {
                             errors.push(data.toString("utf8"));
                         });
@@ -513,66 +430,48 @@ module.exports = function (grunt) {
                                 displayContent(errors.join(""));
                                 done(false);
                             } else {
+                                displayProperty("switch", branch);
                                 next();
                             }
                         });
                     });
                     actions.push(function (next) {
                         var errors = [],
-                            process;
-                        process = spawn(
-                            "/usr/bin/env",
-                            [
-                                "node",
-                                path.join(PATH_COMPILER, "bin/tsc.js"),
-                                path.join(PATH_COMPILER, "src/compiler/tsc.ts"),
-                                path.join(PATH_COMPILER, "bin/lib.d.ts"),
-                                "--target", "ES3",
-                                "--out",
-                                path.join(target)
-                            ]
-                        );
-                        process.stdout.on("data", function (data) {
+                            sources = path.join(COMPILER, "bin");
+                        var command = spawn(ENVIRONMENT, ["cp", "-rf", sources, target]);
+                        command.stdout.on("data", function (data) {
                             errors.push(data.toString("utf8"));
                         });
-                        process.stderr.on("data", function (data) {
+                        command.stderr.on("data", function (data) {
                             errors.push(data.toString("utf8"));
                         });
-                        process.on("close", function (code) {
+                        command.on("close", function (code) {
                             if (code !== 0) {
                                 displayContent(errors.join(""));
                                 done(false);
                             } else {
+                                displayProperty("copy", target);
                                 next();
                             }
                         });
                     });
-                    actions.push(function (next) {
-                        var contentWithLib = [];
-                        fs.readFile(target, function (err1, targetContent) {
-                            if (err1) {
-                                displayError(err1);
-                                done(false);
-                            } else {
-                                contentWithLib.push(targetContent.toString("utf8"));
-                                fs.readFile(path.join(PATH_COMPILER, "bin/lib.d.ts"), function (err2, libContent) {
-                                    if (err2) {
-                                        displayError(err2);
-                                        done(false);
-                                    } else {
-                                        contentWithLib.push("system.writeFile(\"lib.d.ts\", " + JSON.stringify(libContent.toString("utf8").split("\r\n")) + ".join(\"\\n\"));");
-                                        fs.writeFile(target, contentWithLib.join("\n"), function (err3) {
-                                            if (err3) {
-                                                displayError(err3);
-                                                done(false);
-                                            } else {
-                                                next();
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
+                });
+                actions.push(function (next) {
+                    var errors = [],
+                        command = spawn(ENVIRONMENT, ["rm", "-rf", COMPILER]);
+                    command.stdout.on("data", function (data) {
+                        errors.push(data.toString("utf8"));
+                    });
+                    command.stderr.on("data", function (data) {
+                        errors.push(data.toString("utf8"));
+                    });
+                    command.on("close", function (code) {
+                        if (code !== 0) {
+                            displayContent(errors.join(""));
+                            done(false);
+                        } else {
+                            next();
+                        }
                     });
                 });
                 actions.push(function () {
@@ -583,7 +482,7 @@ module.exports = function (grunt) {
             function (next) {
                 var content = "",
                     errors  = [],
-                    args    = ["temp/bin/latest.js"],
+                    args    = [path.join(DOWNLOAD, "latest/tsc.js")],
                     command;
                 args.push("--version");
                 command = spawn(process.execPath, args);
@@ -606,128 +505,166 @@ module.exports = function (grunt) {
                 });
             },
             function (next) {
+                var command,
+                    errors = [];
                 if (typeOf(versions[additionalVersion]) === "undefined") {
-                    copy(
-                        "temp/bin/latest.js",
-                        "temp/bin/v" + additionalVersion.replace(/\./g, "_") + ".js",
-                        function (error) {
-                            if (error) {
-                                displayError(error);
-                                done(false);
-                            } else {
-                                versions[additionalVersion] = "master";
-                                next();
-                            }
+                    command = spawn(ENVIRONMENT, ["cp", "-rf",
+                        path.join(DOWNLOAD, "latest"),
+                        path.join(DOWNLOAD, "v" + additionalVersion)]);
+                    command.stdout.on("data", function (data) {
+                        errors.push(data.toString("utf8"));
+                    });
+                    command.stderr.on("data", function (data) {
+                        errors.push(data.toString("utf8"));
+                    });
+                    command.on("close", function (code) {
+                        if (code !== 0) {
+                            displayContent(errors.join(""));
+                            done(false);
+                        } else {
+                            versions[additionalVersion] = "master";
+                            next();
                         }
-                    );
+                    });
                 } else {
                     next();
                 }
             },
             function (next) {
-                Object.keys(versions).forEach(function (version) {
-                    var content,
-                        filename = "v" + version.replace(/\./g, "_") + ".js";
-                    if (["latest", "default"].indexOf(version) !== -1) {
-                        filename = version + ".js";
-                    }
-                    deferred([
-                        function (next) {
-                            fs.readFile("temp/bin/" + filename, function (error, data) {
-                                if (error) {
-                                    displayError(error);
-                                    done(false);
-                                } else {
-                                    content = String(data);
-                                    next();
-                                }
-                            });
-                        },
-                        function (next) {
-                            var ns = "ts";
-                            if (content.indexOf("var TypeScript;") !== -1) {
-                                ns = "TypeScript";
-                            }
-                            if (/ts\.executeCommandLine\(([^\)]*)\);/.test(content)) {
-                                content = content.replace(/ts\.executeCommandLine\(([^\)]*)\);/g, function (content, arg) {
-                                    if (arg.indexOf(".sys") !== -1) {
-                                        return "ts.sys = system;";
-                                    }
-                                    return "sys = system;";
-                                });
-                            } else {
-                                content = [
-                                    content,
-                                    "TypeScript.Environment = system;"
-                                ].join("\n");
-                            }
-                            content = [
-                                "var compilers;",
-                                "if(typeof compilers===\"undefined\"){compilers = {};}",
-                                "compilers[" + JSON.stringify(version) + "]=function(){",
-                                content,
-                                "return " + ns + ";",
-                                "};"
-                            ].join("\n");
-                            fs.writeFile("temp/bin/" + filename, content, function (error) {
-                                if (error) {
-                                    displayError(error);
-                                    done(false);
-                                } else {
-                                    next();
-                                }
-                            });
-                        },
-                        function () {
-                            next();
-                        }
-                    ]);
-                });
-            },
-            function () {
-                console.log("-------------");
-            },
-            /*function (next) {
-                var versionKeys = Object.keys(versions).sort();
-                fs.writeFile("bin/versions.js", "*//* Allow TypeScript versions *//*\nmodule.exports = [" + versionKeys.map(function (version) { return JSON.stringify(version); }).join(", ") + "];", {encoding: "utf8"}, function (error) {
+                fs.writeFile(VERSIONS, JSON.stringify(versions), function (error) {
                     if (error) {
                         displayError(error);
                         done(false);
                     } else {
+                        displayProperty("write", VERSIONS);
                         next();
                     }
                 });
             },
-            // clean
-            function (next) {
-                var remove = spawn("rm", ["-rf", "temp"]),
-                    errors = [];
-                remove.stdout.on("data", function (data) {
-                    errors.push(data.toString("utf8"));
-                });
-                remove.stderr.on("data", function (data) {
-                    errors.push(data.toString("utf8"));
-                });
-                remove.on("close", function (code) {
-                    if (code !== 0) {
-                        displayContent(errors.join(""));
-                        done(false);
-                    } else {
-                        displayProperty("clean", path.join(cwd, "temp"));
-                        next();
-                    }
-                });
-
-            },*/
-            // finish
             function () {
-                done(true);
+                done();
             }
         ]);
     });
 
-    grunt.registerTask("compile", "Compile project", ["tsc:core", "concat", "wrap"]);
+    grunt.registerTask("build", function () {
+        var done     = this.async(),
+            versions = {};
+        deferred([
+            function (next) {
+                fs.readFile(VERSIONS, function (error, content) {
+                    if (error) {
+                        displayError(error);
+                        done(false);
+                    } else {
+                        displayProperty("read", VERSIONS);
+                        versions = JSON.parse(content.toString("utf8"));
+                        next();
+                    }
+                });
+            },
+            function (next) {
+                var namespace,
+                    actions = [],
+                    result = [
+                        "(function(){",
+                        "var compilers=[];"
+                    ];
+                Object.keys(versions).forEach(function (version) {
+                    var content,
+                        source = path.join(DOWNLOAD, "v" + version, "tsc.js"),
+                        lib = path.join(DOWNLOAD, "v" + version, "lib.d.ts");
+                    if (["latest", "default"].indexOf(version) !== -1) {
+                        source = path.join(DOWNLOAD, version, "tsc.js");
+                        lib = path.join(DOWNLOAD, version, "lib.d.ts");
+                    }
+                    actions.push(function (next) {
+                        fs.readFile(source, function (error, data) {
+                            if (error) {
+                                displayError(error);
+                                done(false);
+                            } else {
+                                content = data.toString("utf8");
+                                next();
+                            }
+                        });
+                    });
+                    actions.push(function (next) {
+                        namespace = "ts";
+                        if (content.indexOf("var TypeScript;") !== -1) {
+                            namespace = "TypeScript";
+                        }
+                        if (/ts\.executeCommandLine\(([^\)]*)\);/.test(content)) {
+                            content = content.replace(/ts\.executeCommandLine\(([^\)]*)\);/g, function (content, arg) {
+                                if (arg.indexOf(".sys") !== -1) {
+                                    return "ts.sys = system;";
+                                }
+                                return "sys = system;";
+                            });
+                        } else {
+                            content = [
+                                content,
+                                "TypeScript.Environment = system;"
+                            ].join("\n");
+                        }
+                        next();
+                    });
+                    actions.push(function (next) {
+                        fs.readFile(lib, function (error, libContent) {
+                            if (error) {
+                                displayError(error);
+                                done(false);
+                            } else {
+                                content += "system.writeFile(\"lib.d.ts\", " + JSON.stringify(libContent.toString("utf8").split("\r\n")) + ".join(\"\\n\"));";
+                                content = "compilers[" + JSON.stringify(version) +
+                                    "]=function(){" + content + ";return " + namespace + ";};";
+                                result.push(content);
+                                next();
+                            }
+                        });
+                    });
+                });
+                actions.push(function (next) {
+                    var temp = path.join(TEMP, "temp.js");
+                    fs.readFile(temp, function (error, content) {
+                        if (error) {
+                            displayError(error);
+                            done(false);
+                        } else {
+                            displayProperty("read", temp);
+                            result.push(content.toString("utf8"));
+                            next();
+                        }
+                    });
+                });
+                actions.push(function (next) {
+                    result.push(";window.tsc={configure:configure,version:function(){return config.getVersion()},",
+                        "base:function(){return config.getBase()},encoding:function(){return config.getEncoding()}};}());");
+                    fs.writeFile(RESULT, result.join("\n"), function (error) {
+                        if (error) {
+                            displayError(error);
+                            done(false);
+                        } else {
+                            displayProperty("result", RESULT);
+                            next();
+                        }
+                    });
+                });
+                actions.push(function () {
+                    next();
+                });
+                deferred(actions);
+            },
+            function () {
+                done();
+            }
+        ]);
+    });
 
-    grunt.registerTask("default", "Build project.", ["tsc:core", "concat", "wrap", "uglify:core", "closure-compiler"]);
+    grunt.registerTask("compile", ["tsc:all", "uglify:all", "build", "uglify:result", "closure-compiler:result"]);
+
+    grunt.registerTask("default", ["download", "compile", "compress"]);
+
+    grunt.registerTask("compress", []);
 
 };
