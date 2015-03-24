@@ -167,6 +167,7 @@ module.exports = function (grunt) {
         RESULT      = path.join(TEMP, "result.js"),
         REPOSITORY  = "https://github.com/Microsoft/TypeScript.git";
 
+
     grunt.initConfig({
         pkg: grunt.file.readJSON("package.json"),
         tsc: {
