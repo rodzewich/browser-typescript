@@ -1,19 +1,11 @@
 ```
 #####################################################################################
-
- MMMMMMMMMM                             6MMMMb\                 68b
- /   MM   \                            6M'    `                 Y89            /
-     MM ____    ___ __ ____     ____   MM         ____  ___  __ ___ __ ____   /M
-     MM `MM(    )M' `M6MMMMb   6MMMMb  YM.       6MMMMb.`MM 6MM `MM `M6MMMMb /MMMMM
-     MM  `Mb    d'   MM'  `Mb 6M'  `Mb  YMMMMb  6M'   Mb MM69 "  MM  MM'  `Mb MM
-     MM   YM.  ,P    MM    MM MM    MM      `Mb MM    `' MM'     MM  MM    MM MM
-     MM    MM  M     MM    MM MMMMMMMM       MM MM       MM      MM  MM    MM MM
-     MM    `Mbd'     MM    MM MM             MM MM       MM      MM  MM    MM MM
-     MM     YMP      MM.  ,M9 YM    d9 L    ,M9 YM.   d9 MM      MM  MM.  ,M9 YM.  ,
-    _MM_     M       MMYMMM9   YMMMM9  MYMMMM9   YMMMM9 _MM_    _MM_ MMYMMM9   YMMM9
-            d'       MM                                              MM
-        (8),P        MM                                              MM
-         YMM        _MM_                                            _MM_
+                  _____                 ____            _       _
+                 |_   _|   _ _ __   ___/ ___|  ___ _ __(_)_ __ | |_
+                   | || | | | '_ \ / _ \___ \ / __| '__| | '_ \| __|
+                   | || |_| | |_) |  __/___) | (__| |  | | |_) | |_
+                   |_| \__, | .__/ \___|____/ \___|_|  |_| .__/ \__|
+                       |___/|_|                          |_|
 
                                   .ed"""" """$$$$be.
                                 -"           ^""**$$$e.
