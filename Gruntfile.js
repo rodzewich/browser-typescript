@@ -165,11 +165,12 @@ module.exports = function (grunt) {
         COMPILER    = path.join(TEMP, "compiler"),
         VERSIONS    = path.join(TEMP, "versions.json"),
         RESULT      = path.join(TEMP, "result.js"),
-        REPOSITORY  = "https://github.com/Microsoft/TypeScript.git";
+        REPOSITORY  = "https://github.com/Microsoft/TypeScript.git",
+        pkg         = grunt.file.readJSON("package.json");
 
 
     grunt.initConfig({
-        pkg: grunt.file.readJSON("package.json"),
+        pkg: pkg,
         tsc: {
             options: {
                 version: "latest"
@@ -215,7 +216,7 @@ module.exports = function (grunt) {
             result: {
                 closurePath: '.',
                 js: 'temp/result.js',
-                jsOutputFile: 'dest/tsc.min.js',
+                jsOutputFile: 'temp/tsc.min.js',
                 maxBuffer: 50000,
                 options: {
                     compilation_level: 'SIMPLE_OPTIMIZATIONS',
@@ -662,10 +663,63 @@ module.exports = function (grunt) {
         ]);
     });
 
+    grunt.registerTask("banner", function () {
+        var done = this.async(),
+            result,
+            banner;
+        deferred([
+            function (next) {
+                fs.readFile("src/banner.txt", function (error, content) {
+                    if (error) {
+                        displayError(error);
+                        done(false);
+                    } else {
+                        banner = grunt.template.process(content.toString("utf8"), pkg);
+                        next();
+                    }
+                });
+            },
+            function (next) {
+                fs.readFile("temp/tsc.min.js", function (error, content) {
+                    if (error) {
+                        displayError(error);
+                        done(false);
+                    } else {
+                        result = banner + content.toString("utf8");
+                        next();
+                    }
+                });
+            },
+            function (next) {
+                mkdir("dest", function (error) {
+                    if (error) {
+                        displayError(error);
+                        done(false);
+                    } else {
+                        next();
+                    }
+                });
+            },
+            function (next) {
+                fs.writeFile("dest/tsc.min.js", result, function (error) {
+                    if (error) {
+                        displayError(error);
+                        done(false);
+                    } else {
+                        next();
+                    }
+                });
+            },
+            function () {
+                done(true);
+            }
+        ]);
+    });
+
     grunt.registerTask("compile", ["tsc:all", "uglify:all", "build", "compress"]);
 
     grunt.registerTask("default", ["download", "compile"]);
 
-    grunt.registerTask("compress", ["uglify:result", "closure-compiler:result"]);
+    grunt.registerTask("compress", ["uglify:result", "closure-compiler:result", "banner"]);
 
 };

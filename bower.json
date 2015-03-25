@@ -1,0 +1,21 @@
+{
+  "name": "tsc",
+  "version": "0.0.1",
+  "homepage": "https://github.com/rodzewich/browser-typescript",
+  "authors": [
+    "Oleg Rodzewich <rodzewich.oleg@gmail.com>"
+  ],
+  "description": "Running TypeScript files in browser",
+  "main": "dest/tsc.min.js",
+  "keywords": [
+    "TypeScript"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
