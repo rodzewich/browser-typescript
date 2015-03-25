@@ -674,7 +674,7 @@ module.exports = function (grunt) {
                         displayError(error);
                         done(false);
                     } else {
-                        banner = grunt.template.process(content.toString("utf8"), pkg);
+                        banner = grunt.template.process(content.toString("utf8"), {pkg: pkg});
                         next();
                     }
                 });

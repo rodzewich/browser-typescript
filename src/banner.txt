@@ -38,4 +38,8 @@
  *                     $.d$$$*                           *  J$$$e*
  *                      """""                             "$$$"
  *
+ *      project: <%= pkg.name %>
+ *      version: <%= pkg.version %>
+ *       author: <%= pkg.author.name %> <<%= pkg.author.email %>>
+ *      license: MIT
  ******************************************************************************/
